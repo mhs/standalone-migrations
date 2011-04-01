@@ -239,26 +239,26 @@ class MigratorTasks < ::Rake::TaskLib
         task :purge => 'db:ar_init' do
           config = ActiveRecord::Base.configurations['test']
           case config["adapter"]
-            when "mysql"
+            when /mysql/
               ActiveRecord::Base.establish_connection(:test)
               ActiveRecord::Base.connection.recreate_database(config["database"], config)
-            when "postgresql" #TODO i doubt this will work <-> methods are not defined
+            when /postgresql/ #TODO i doubt this will work <-> methods are not defined
               ActiveRecord::Base.clear_active_connections!
               drop_database(config)
               create_database(config)
-            when "sqlite", "sqlite3"
+            when /sqlite/
               db_file = config["database"] || config["dbfile"]
               File.delete(db_file) if File.exist?(db_file)
-            when "sqlserver"
+            when /sqlserver/
               drop_script = "#{config["host"]}.#{config["database"]}.DP1".gsub(/\\/, '-')
               `osql -E -S #{config["host"]} -d #{config["database"]} -i db\\#{drop_script}`
               `osql -E -S #{config["host"]} -d #{config["database"]} -i db\\test_structure.sql`
-            when "oci", "oracle"
+            when /oci/, /oracle/
               ActiveRecord::Base.establish_connection(:test)
               ActiveRecord::Base.connection.structure_drop.split(";\n\n").each do |ddl|
                 ActiveRecord::Base.connection.execute(ddl)
               end
-            when "firebird"
+            when /firebird/
               ActiveRecord::Base.establish_connection(:test)
               ActiveRecord::Base.connection.recreate_database!
             else
